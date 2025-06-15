@@ -4,7 +4,7 @@ from pendulum import datetime
 
 from discounts.base import Discount
 from discounts.constants import DiscountType
-from discounts.discount_rules.discount_rule_interface import IDiscountRule
+from discounts.rules.discount_rule_interface import IDiscountRule
 
 
 class FixedAmountDiscount(Discount):

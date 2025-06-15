@@ -1,4 +1,4 @@
-from discounts.discount_rules.discount_rule_interface import IDiscountRule
+from discounts.rules.discount_rule_interface import IDiscountRule
 from models.cart import CartItem
 from models.customer import CustomerProfile
 from models.payment import PaymentInfo, PaymentMethod

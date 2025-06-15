@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 
 from discounts.base import Discount
+from discounts.constants import DiscountType
 
 
 class IDiscountRepository(ABC):
 
     @abstractmethod
-    async def list_all_active_discounts(self) -> list[Discount]:
+    async def list_all_active_discounts(self, exclude_discount_type: set[DiscountType]) -> list[Discount]:
         """
         List all available discounts.
 
@@ -34,8 +35,9 @@ class InMemoryDiscountRepository(IDiscountRepository):
     def __init__(self, discounts: list[Discount] = None):
         self.all_discounts = discounts or []
 
-    async def list_all_active_discounts(self) -> list[Discount]:
-        return [discount for discount in self.all_discounts if not discount.is_expired()]
+    async def list_all_active_discounts(self, exclude_discount_type: set[DiscountType]) -> list[Discount]:
+        return [discount for discount in self.all_discounts if
+                not discount.is_expired() and discount.discount_type not in exclude_discount_type]
 
     async def get_discount_by_code(self, discount_code: str) -> Discount | None:
         for discount in self.all_discounts:

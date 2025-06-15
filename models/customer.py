@@ -14,3 +14,4 @@ class CustomerProfile:
     name: str
     tier: CustomerTier
     email: str
+    phone: str

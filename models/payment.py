@@ -4,8 +4,7 @@ from typing import Optional
 
 
 class PaymentMethod(Enum):
-    CREDIT_CARD = "credit_card"
-    DEBIT_CARD = "debit_card"
+    CARD_PAYMENT = "card_payment"
     NET_BANKING = "net_banking"
     UPI = "upi"
     WALLET = "wallet"

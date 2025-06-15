@@ -1,70 +1,16 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 from decimal import Decimal
-from models import (
-    CartItem, CustomerProfile, PaymentInfo,
-    DiscountedPrice
-)
-from discounts import (
-    BrandDiscount, CategoryDiscount,
-    BankOfferDiscount, CouponDiscount
-)
-from fake_data import (
-    DISCOUNT_CODES, BRAND_DISCOUNTS,
-    CATEGORY_DISCOUNTS, BANK_OFFERS
-)
 
-
-class DiscountValidationError(Exception):
-    """Custom exception for discount validation errors"""
-    pass
+from models.cart import CartItem
+from models.customer import CustomerProfile
+from models.discount import DiscountedPrice
+from models.payment import PaymentInfo
+from repositories.discount_repository import IDiscountRepository
 
 
 class DiscountService:
-    def __init__(self):
-        self.applied_discounts = {}
-        self._initialize_discounts()
-
-    def _initialize_discounts(self):
-        """Initialize all available discounts"""
-        self.brand_discounts = {
-            brand: BrandDiscount(
-                brand=brand,
-                discount_percentage=info["discount_percentage"],
-                max_discount=info["max_discount"]
-            )
-            for brand, info in BRAND_DISCOUNTS.items()
-        }
-
-        self.category_discounts = {
-            category: CategoryDiscount(
-                category=category,
-                discount_percentage=info["discount_percentage"],
-                max_discount=info["max_discount"]
-            )
-            for category, info in CATEGORY_DISCOUNTS.items()
-        }
-
-        self.bank_offers = {
-            bank: BankOfferDiscount(
-                bank_name=bank,
-                discount_percentage=info["discount_percentage"],
-                max_discount=info["max_discount"],
-                card_types=info["card_types"]
-            )
-            for bank, info in BANK_OFFERS.items()
-        }
-
-        self.coupon_discounts = {
-            code: CouponDiscount(
-                code=code,
-                discount_percentage=info["discount_percentage"],
-                max_discount=info["max_discount"],
-                min_purchase=info["min_purchase"],
-                valid_categories=info["valid_categories"],
-                excluded_brands=info["excluded_brands"]
-            )
-            for code, info in DISCOUNT_CODES.items()
-        }
+    def __init__(self, discount_repository: IDiscountRepository):
+        self._discount_repository = discount_repository
 
     async def calculate_cart_discounts(
         self,
@@ -73,12 +19,6 @@ class DiscountService:
         payment_info: Optional[PaymentInfo] = None,
         discount_code: Optional[str] = None
     ) -> DiscountedPrice:
-        """
-        Calculate final price after applying discount logic in the following order:
-        1. Brand/Category discounts
-        2. Coupon codes
-        3. Bank offers
-        """
         self.applied_discounts = {}
         original_price = sum(item.product.base_price * item.quantity for item in cart_items)
         current_price = original_price
@@ -184,7 +124,7 @@ class DiscountService:
         messages = []
         for name, amount in self.applied_discounts.items():
             messages.append(f"{name}: ₹{amount:.2f} off")
-        
+
         return " | ".join(messages)
 
     async def validate_discount_code(
@@ -203,4 +143,4 @@ class DiscountService:
         if code not in self.coupon_discounts:
             raise DiscountValidationError(f"Invalid discount code: {code}")
 
-        return self.coupon_discounts[code].can_apply(cart_items, customer) 
+        return self.coupon_discounts[code].can_apply(cart_items, customer)

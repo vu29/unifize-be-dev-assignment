@@ -1,6 +1,8 @@
 from typing import List, Optional
 from decimal import Decimal
 
+from discounts.base import Discount
+from exceptions import DiscountNotFoundException, DiscountExpiredException
 from models.cart import CartItem
 from models.customer import CustomerProfile
 from models.discount import DiscountedPrice
@@ -128,19 +130,17 @@ class DiscountService:
         return " | ".join(messages)
 
     async def validate_discount_code(
-        self,
-        code: str,
-        cart_items: List[CartItem],
-        customer: CustomerProfile
+            self,
+            code: str,
+            cart_items: List[CartItem],
+            customer: CustomerProfile
     ) -> bool:
-        """
-        Validate if a discount code can be applied based on:
-        - Brand exclusions
-        - Category restrictions
-        - Customer tier requirements
-        - Minimum purchase amount
-        """
-        if code not in self.coupon_discounts:
-            raise DiscountValidationError(f"Invalid discount code: {code}")
+        discount: Discount = await self._discount_repository.get_discount_by_code(code)
+        if not discount:
+            raise DiscountNotFoundException(f"Discount code '{code}' not found.")
+        if discount.is_expired():
+            raise DiscountExpiredException(f"Discount code '{code}' has expired.")
 
-        return self.coupon_discounts[code].can_apply(cart_items, customer)
+        return any(
+            discount.is_applicable(customer_profile=customer, cart_item=cart_item) for cart_item in cart_items
+        )
